@@ -1,0 +1,10 @@
+FROM maven:3.9.9-eclipse-temurin-21
+
+WORKDIR /app
+
+COPY . .
+
+EXPOSE 4000
+
+CMD ["mvn", "spring-boot:run"]
+
