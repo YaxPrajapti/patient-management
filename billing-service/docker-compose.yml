@@ -1,0 +1,18 @@
+version: '3.8'
+
+networks:
+  internal:
+    driver: bridge
+
+services:
+  billing-service:
+    build:
+      context: .
+      dockerfile: billing-service/Dockerfile
+    container_name: billing-service
+    image: billing-service:latest
+    ports:
+      - "4001:4001"
+      - "9001:9001"
+    networks:
+      - internal

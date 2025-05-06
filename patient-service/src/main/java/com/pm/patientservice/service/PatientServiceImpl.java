@@ -4,6 +4,7 @@ import com.pm.patientservice.dto.PatientRequestDto;
 import com.pm.patientservice.dto.PatientResponseDto;
 import com.pm.patientservice.exception.EmailAlreadyExistException;
 import com.pm.patientservice.exception.PatientNotFoundException;
+import com.pm.patientservice.grpc.BillingServiceGrpcClient;
 import com.pm.patientservice.mapper.PatientMapper;
 import com.pm.patientservice.model.Patient;
 import com.pm.patientservice.repository.PatientRepository;
@@ -17,9 +18,11 @@ import java.util.UUID;
 public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepository;
+    private final BillingServiceGrpcClient billingServiceGrpcClient;
 
-    public PatientServiceImpl(PatientRepository patientRepository) {
+    public PatientServiceImpl(PatientRepository patientRepository, BillingServiceGrpcClient billingServiceGrpcClient) {
         this.patientRepository = patientRepository;
+        this.billingServiceGrpcClient = billingServiceGrpcClient;
     }
 
     @Override
@@ -38,13 +41,16 @@ public class PatientServiceImpl implements PatientService {
         Patient newPatient = patientRepository.save(
                 PatientMapper.toPatientModel(patientRequestDto)
         );
+
+        billingServiceGrpcClient.createBillingAccount(newPatient.getId().toString(), newPatient.getName(), newPatient.getEmail());
+
         return PatientMapper.toPatientResponseDto(newPatient);
     }
 
     @Override
     public PatientResponseDto updatePatient(PatientRequestDto patientRequestDto, UUID patientId) {
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new PatientNotFoundException("Patient not found with id: "+ patientId));
+                .orElseThrow(() -> new PatientNotFoundException("Patient not found with id: " + patientId));
         if (patientRepository.existsByEmailAndIdNot(patientRequestDto.getEmail(), patientId)) {
             throw new EmailAlreadyExistException("Patient with this email already exists. " + patientRequestDto.getEmail());
         }
